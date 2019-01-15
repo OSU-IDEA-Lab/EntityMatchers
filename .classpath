@@ -4,5 +4,6 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/Castor"/>
 	<classpathentry kind="lib" path="lib/simmetrics-core-4.1.1-jar-with-dependencies.jar"/>
+	<classpathentry kind="lib" path="lib/opencsv-4.3.2.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
