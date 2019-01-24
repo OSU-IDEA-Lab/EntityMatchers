@@ -45,8 +45,8 @@ public class GeneralMatcher {
 		String output = args[4];
 		
 		TimeWatch tw = TimeWatch.start();
-//		match(file1, attributeNumber1, file2, attributeNumber2, output, false);
-		matchParallel(file1, attributeNumber1, file2, attributeNumber2, output, false);
+//		match(file1, attributeNumber1, file2, attributeNumber2, output, true);
+		matchParallel(file1, attributeNumber1, file2, attributeNumber2, output, true);
 		System.out.println(tw.time());
 	}
 	
@@ -210,11 +210,9 @@ public class GeneralMatcher {
 		    String [] nextLine;
 		    // Skip header
 		    reader.readNext();
-		    int cc = 0;
-		    while ((nextLine = reader.readNext()) != null && cc < 10) {
+		    while ((nextLine = reader.readNext()) != null) {
 		    	String value = nextLine[attributeNumber1];
 		    	list1.add(value);
-		    	cc++;
 		    }
 		    
 		    // Read file 2
@@ -264,10 +262,8 @@ public class GeneralMatcher {
 				PriorityQueue<SimilarValue> heap = new PriorityQueue<SimilarValue>(10,
 						Comparator.comparing(SimilarValue::getDistance).thenComparing(SimilarValue::getValue).reversed());
 				
-				System.out.println("M:"+entity1);
 				String[] tokens = entity1.split("[\\p{Punct}\\s]+");
 				for (String token : tokens) {
-					System.out.println("T:"+token);
 					if (list2Blocks.containsKey(token)) {
 						for (String entity2 : list2Blocks.get(token)) {
 							float score1 = metric.compare(entity1, entity2);
@@ -276,7 +272,7 @@ public class GeneralMatcher {
 							float similarityScore = (score1 + score2) / 2; 
 							
 							if (similarityScore > 0.65) {
-								System.out.println(entity1+" - " + entity2 + " - " + similarityScore);
+//								System.out.println(entity1+" - " + entity2 + " - " + similarityScore);
 								heap.add(new SimilarValue(entity2, (int)(similarityScore*100)));
 							}
 						}
