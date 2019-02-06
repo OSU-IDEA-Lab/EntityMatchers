@@ -45,75 +45,26 @@ public class GeneralMatcher {
 		String output = args[4];
 		
 		TimeWatch tw = TimeWatch.start();
-//		match(file1, attributeNumber1, file2, attributeNumber2, output, true);
-		matchParallel(file1, attributeNumber1, file2, attributeNumber2, output, true);
+//		match(file1, attributeNumber1, file2, attributeNumber2, output, false);
+		matchParallel(file1, attributeNumber1, file2, attributeNumber2, output, false);
 		System.out.println(tw.time());
 	}
 	
-	private static void match(String file1, int attributeNumber1, String file2, int attributeNumber2, String output, boolean oneMatch) {
+	/*
+	 * Match entities in the specified column of file1 with entities in the specified column of file2. 
+	 * If oneMatch=false, it matches at most the number of entities specified by MAX_MATCHES.
+	 * If oneMatch=true, it matches only one entity (the most similar one). If there are ties, it chooses one randomly.
+	 */
+	public static void match(String file1, int attributeNumber1, String file2, int attributeNumber2, String output, boolean oneMatch) {
 		StringMetric metric = 
 				with(new SmithWatermanGotoh())
 				.simplify(Simplifiers.removeDiacritics())
 				.simplify(Simplifiers.toLowerCase())
 				.build();
 		
-		String[] stopwords = {"a", "an", "and", "are", "as", "at", "be", "but", "by","for", "if", "in", "into", "is", "it","no", "not", "of", "on", "or", "such","that", "the", "their", "then", "there", "these","they", "this", "to", "was", "will", "with"};
-
-		Set<String> stopWordSet = new HashSet<String>(Arrays.asList(stopwords));
-		
 		List<String> list1 = new LinkedList<String>();
 		Map<String,Set<String>> list2Blocks = new HashMap<String,Set<String>>();
-		
-		BufferedReader br = null;
-		CSVReader reader = null;
-		try {
-			// Read file 1
-			reader = new CSVReader(new FileReader(file1));
-		    String [] nextLine;
-		    // Skip header
-		    reader.readNext();
-		    while ((nextLine = reader.readNext()) != null) {
-		    	String value = nextLine[attributeNumber1];
-		    	list1.add(value);
-		    }
-		    
-		    // Read file 2
-		    reader = new CSVReader(new FileReader(file2));
-		    // Skip header
-		    reader.readNext();
-		    while ((nextLine = reader.readNext()) != null) {
-		    	String value = nextLine[attributeNumber2];
-				String[] tokens = value.split("[\\p{Punct}\\s]+");
-				for (String token : tokens) {
-					if (!stopWordSet.contains(token.toLowerCase())) {
-						if (!list2Blocks.containsKey(token)) {
-							list2Blocks.put(token, new HashSet<String>());
-						}
-						list2Blocks.get(token).add(value);
-					}
-				}
-		    }
-
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			if (br != null) {
-				try {
-					br.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-			if (reader != null) {
-				try {
-					reader.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		}
+		readFiles(file1, attributeNumber1, file2, attributeNumber2, list1, list2Blocks);
 		
 		System.out.println("Start matching");
 		StringBuilder sb = new StringBuilder();
@@ -188,69 +139,22 @@ public class GeneralMatcher {
 		}
 	}
 	
-	private static void matchParallel(String file1, int attributeNumber1, String file2, int attributeNumber2, String output, boolean oneMatch) {
+	/*
+	 * Match entities in the specified column of file1 with entities in the specified column of file2. 
+	 * If oneMatch=false, it matches at most the number of entities specified by MAX_MATCHES.
+	 * If oneMatch=true, it matches only one entity (the most similar one). If there are ties, it chooses one randomly.
+	 * Uses parallelization in Java 8.
+	 */
+	public static void matchParallel(String file1, int attributeNumber1, String file2, int attributeNumber2, String output, boolean oneMatch) {
 		StringMetric metric = 
 				with(new SmithWatermanGotoh())
 				.simplify(Simplifiers.removeDiacritics())
 				.simplify(Simplifiers.toLowerCase())
 				.build();
 		
-		String[] stopwords = {"a", "an", "and", "are", "as", "at", "be", "but", "by","for", "if", "in", "into", "is", "it","no", "not", "of", "on", "or", "such","that", "the", "their", "then", "there", "these","they", "this", "to", "was", "will", "with"};
-
-		Set<String> stopWordSet = new HashSet<String>(Arrays.asList(stopwords));
-		
 		List<String> list1 = new LinkedList<String>();
 		Map<String,Set<String>> list2Blocks = new HashMap<String,Set<String>>();
-		
-		BufferedReader br = null;
-		CSVReader reader = null;
-		try {
-			// Read file 1
-			reader = new CSVReader(new FileReader(file1));
-		    String [] nextLine;
-		    // Skip header
-		    reader.readNext();
-		    while ((nextLine = reader.readNext()) != null) {
-		    	String value = nextLine[attributeNumber1];
-		    	list1.add(value);
-		    }
-		    
-		    // Read file 2
-		    reader = new CSVReader(new FileReader(file2));
-		    // Skip header
-		    reader.readNext();
-		    while ((nextLine = reader.readNext()) != null) {
-		    	String value = nextLine[attributeNumber2];
-				String[] tokens = value.split("[\\p{Punct}\\s]+");
-				for (String token : tokens) {
-					if (!stopWordSet.contains(token.toLowerCase())) {
-						if (!list2Blocks.containsKey(token)) {
-							list2Blocks.put(token, new HashSet<String>());
-						}
-						list2Blocks.get(token).add(value);
-					}
-				}
-		    }
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			if (br != null) {
-				try {
-					br.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-			if (reader != null) {
-				try {
-					reader.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		}
+		readFiles(file1, attributeNumber1, file2, attributeNumber2, list1, list2Blocks);
 		
 		System.out.println("Start matching");
 		
@@ -323,6 +227,61 @@ public class GeneralMatcher {
 			printWriter.close();
 		} catch (IOException e) {
 			e.printStackTrace();
+		}
+	}
+	
+	private static void readFiles(String file1, int attributeNumber1, String file2, int attributeNumber2, List<String> list1, Map<String,Set<String>> list2Blocks) {
+		String[] stopwords = {"a", "an", "and", "are", "as", "at", "be", "but", "by","for", "if", "in", "into", "is", "it","no", "not", "of", "on", "or", "such","that", "the", "their", "then", "there", "these","they", "this", "to", "was", "will", "with"};
+		Set<String> stopWordSet = new HashSet<String>(Arrays.asList(stopwords));
+		
+		BufferedReader br = null;
+		CSVReader reader = null;
+		try {
+			// Read file 1
+			reader = new CSVReader(new FileReader(file1));
+		    String [] nextLine;
+		    // Skip header
+		    reader.readNext();
+		    while ((nextLine = reader.readNext()) != null) {
+		    	String value = nextLine[attributeNumber1];
+		    	list1.add(value);
+		    }
+		    
+		    // Read file 2
+		    reader = new CSVReader(new FileReader(file2));
+		    // Skip header
+		    reader.readNext();
+		    while ((nextLine = reader.readNext()) != null) {
+		    	String value = nextLine[attributeNumber2];
+				String[] tokens = value.split("[\\p{Punct}\\s]+");
+				for (String token : tokens) {
+					if (!stopWordSet.contains(token.toLowerCase())) {
+						if (!list2Blocks.containsKey(token)) {
+							list2Blocks.put(token, new HashSet<String>());
+						}
+						list2Blocks.get(token).add(value);
+					}
+				}
+		    }
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			if (br != null) {
+				try {
+					br.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+			if (reader != null) {
+				try {
+					reader.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
 		}
 	}
 	
