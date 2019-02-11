@@ -36,6 +36,7 @@ import castor.utils.TimeWatch;
 public class GeneralMatcher {
 	
 	public static final int MAX_MATCHES = 10;
+	public static final double MIN_SIMILARITY_SCORE = 0.65;
 
 	public static void main(String[] args) {		
 		String file1 = args[0];
@@ -90,7 +91,7 @@ public class GeneralMatcher {
 						
 						float similarityScore = (score1 + score2) / 2; 
 						
-						if (similarityScore > 0.65) {
+						if (similarityScore > MIN_SIMILARITY_SCORE) {
 //							System.out.println(entity1+" - " + entity2 + " - " + similarityScore);
 							heap.add(new SimilarValue(entity2, (int)(similarityScore*100)));
 						}
@@ -175,7 +176,7 @@ public class GeneralMatcher {
 							
 							float similarityScore = (score1 + score2) / 2; 
 							
-							if (similarityScore > 0.65) {
+							if (similarityScore > MIN_SIMILARITY_SCORE) {
 //								System.out.println(entity1+" - " + entity2 + " - " + similarityScore);
 								heap.add(new SimilarValue(entity2, (int)(similarityScore*100)));
 							}
