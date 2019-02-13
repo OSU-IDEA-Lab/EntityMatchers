@@ -91,7 +91,7 @@ public class GeneralMatcher {
 						
 						float similarityScore = (score1 + score2) / 2; 
 						
-						if (similarityScore > MIN_SIMILARITY_SCORE) {
+						if (similarityScore >= MIN_SIMILARITY_SCORE) {
 //							System.out.println(entity1+" - " + entity2 + " - " + similarityScore);
 							heap.add(new SimilarValue(entity2, (int)(similarityScore*100)));
 						}
@@ -176,8 +176,7 @@ public class GeneralMatcher {
 							
 							float similarityScore = (score1 + score2) / 2; 
 							
-							if (similarityScore > MIN_SIMILARITY_SCORE) {
-//								System.out.println(entity1+" - " + entity2 + " - " + similarityScore);
+							if (similarityScore >= MIN_SIMILARITY_SCORE) {
 								heap.add(new SimilarValue(entity2, (int)(similarityScore*100)));
 							}
 						}
@@ -195,7 +194,6 @@ public class GeneralMatcher {
 						Random rand = new Random();
 						String matchedEntity = topMatches.get(rand.nextInt(topMatches.size()));
 						
-			//			System.out.println(entity1+"-"+matchedEntity);
 						sb.append("\"" + entity1.replace("\"", "\"\"") + "\", \"" + matchedEntity.replace("\"", "\"\"") + "\"\n");
 					}
 				} else {
@@ -208,7 +206,6 @@ public class GeneralMatcher {
 					}
 					
 					for (String entity2 : matches) {
-		//				System.out.println(entity1+"-"+entity2);
 						sb.append("\"" + entity1.replace("\"", "\"\"") + "\", \"" + entity2.replace("\"", "\"\"") + "\"\n");
 					}
 				}
