@@ -14,7 +14,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
@@ -63,15 +62,15 @@ public class GeneralMatcher {
 				.simplify(Simplifiers.toLowerCase())
 				.build();
 		
-		List<String> list1 = new LinkedList<String>();
-		Map<String,Set<String>> list2Blocks = new HashMap<String,Set<String>>();
-		readFiles(file1, attributeNumber1, file2, attributeNumber2, list1, list2Blocks);
+		Set<String> set1 = new HashSet<String>();
+		Map<String,Set<String>> tokenBlocks2 = new HashMap<String,Set<String>>();
+		readFiles(file1, attributeNumber1, file2, attributeNumber2, set1, tokenBlocks2);
 		
 		System.out.println("Start matching");
 		StringBuilder sb = new StringBuilder();
 		
 		int c = 0;
-		for(String entity1 : list1) {
+		for(String entity1 : set1) {
 //			if (c > 1000)
 //				break;
 			if ((c % 100) == 0)
@@ -84,8 +83,8 @@ public class GeneralMatcher {
 			
 			String[] tokens = entity1.split("[\\p{Punct}\\s]+");
 			for (String token : tokens) {
-				if (list2Blocks.containsKey(token)) {
-					for (String entity2 : list2Blocks.get(token)) {
+				if (tokenBlocks2.containsKey(token)) {
+					for (String entity2 : tokenBlocks2.get(token)) {
 						float score1 = metric.compare(entity1, entity2);
 						float score2 = mySimilarity(entity1, entity2);
 						
@@ -153,13 +152,13 @@ public class GeneralMatcher {
 				.simplify(Simplifiers.toLowerCase())
 				.build();
 		
-		List<String> list1 = new LinkedList<String>();
-		Map<String,Set<String>> list2Blocks = new HashMap<String,Set<String>>();
-		readFiles(file1, attributeNumber1, file2, attributeNumber2, list1, list2Blocks);
+		Set<String> set1 = new HashSet<String>();
+		Map<String,Set<String>> tokenBlocks2 = new HashMap<String,Set<String>>();
+		readFiles(file1, attributeNumber1, file2, attributeNumber2, set1, tokenBlocks2);
 		
 		System.out.println("Start matching");
 		
-		Stream<String> matchedMovies = list1.parallelStream().map(new Function<String, String>() {
+		Stream<String> matchedMovies = set1.parallelStream().map(new Function<String, String>() {
 			@Override
             public String apply(String entity1) {
 				StringBuilder sb = new StringBuilder();
@@ -169,12 +168,12 @@ public class GeneralMatcher {
 				
 				String[] tokens = entity1.split("[\\p{Punct}\\s]+");
 				for (String token : tokens) {
-					if (list2Blocks.containsKey(token)) {
-						for (String entity2 : list2Blocks.get(token)) {
+					if (tokenBlocks2.containsKey(token)) {
+						for (String entity2 : tokenBlocks2.get(token)) {
 							float score1 = metric.compare(entity1, entity2);
 							float score2 = mySimilarity(entity1, entity2);
 							
-							float similarityScore = (score1 + score2) / 2; 
+							float similarityScore = (score1 + score2) / 2;
 							
 							if (similarityScore >= MIN_SIMILARITY_SCORE) {
 								heap.add(new SimilarValue(entity2, (int)(similarityScore*100)));
@@ -228,7 +227,7 @@ public class GeneralMatcher {
 		}
 	}
 	
-	private static void readFiles(String file1, int attributeNumber1, String file2, int attributeNumber2, List<String> list1, Map<String,Set<String>> list2Blocks) {
+	private static void readFiles(String file1, int attributeNumber1, String file2, int attributeNumber2, Set<String> set1, Map<String,Set<String>> tokenBlocks2) {
 		String[] stopwords = {"a", "an", "and", "are", "as", "at", "be", "but", "by","for", "if", "in", "into", "is", "it","no", "not", "of", "on", "or", "such","that", "the", "their", "then", "there", "these","they", "this", "to", "was", "will", "with"};
 		Set<String> stopWordSet = new HashSet<String>(Arrays.asList(stopwords));
 		
@@ -242,7 +241,8 @@ public class GeneralMatcher {
 		    reader.readNext();
 		    while ((nextLine = reader.readNext()) != null) {
 		    	String value = nextLine[attributeNumber1];
-		    	list1.add(value);
+		    	if (!value.equals(""))
+		    		set1.add(value);
 		    }
 		    
 		    // Read file 2
@@ -253,11 +253,11 @@ public class GeneralMatcher {
 		    	String value = nextLine[attributeNumber2];
 				String[] tokens = value.split("[\\p{Punct}\\s]+");
 				for (String token : tokens) {
-					if (!stopWordSet.contains(token.toLowerCase())) {
-						if (!list2Blocks.containsKey(token)) {
-							list2Blocks.put(token, new HashSet<String>());
+					if (!token.equals("") && !stopWordSet.contains(token.toLowerCase())) {
+						if (!tokenBlocks2.containsKey(token)) {
+							tokenBlocks2.put(token, new HashSet<String>());
 						}
-						list2Blocks.get(token).add(value);
+						tokenBlocks2.get(token).add(value);
 					}
 				}
 		    }
