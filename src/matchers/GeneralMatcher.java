@@ -34,9 +34,6 @@ import castor.similarity.SimilarValue;
 import castor.utils.TimeWatch;
 
 public class GeneralMatcher {
-	
-	public static final int MAX_MATCHES = 10;
-	public static final double MIN_SIMILARITY_SCORE = 0.65;
 
 	public static void main(String[] args) {		
 		String file1 = args[0];
@@ -44,10 +41,12 @@ public class GeneralMatcher {
 		String file2 = args[2];
 		int attributeNumber2 = Integer.parseInt(args[3]);
 		String output = args[4];
+		int maxMatches = Integer.parseInt(args[5]);
+		double minSimilarityScore = Double.parseDouble(args[6]);
 		
 		TimeWatch tw = TimeWatch.start();
-//		match(file1, attributeNumber1, file2, attributeNumber2, output, false);
-		matchParallel(file1, attributeNumber1, file2, attributeNumber2, output, false);
+//		match(file1, attributeNumber1, file2, attributeNumber2, output, false, maxMatches, minSimilarityScore);
+		matchParallel(file1, attributeNumber1, file2, attributeNumber2, output, false, maxMatches, minSimilarityScore);
 		System.out.println(tw.time());
 	}
 	
@@ -56,7 +55,7 @@ public class GeneralMatcher {
 	 * If oneMatch=false, it matches at most the number of entities specified by MAX_MATCHES.
 	 * If oneMatch=true, it matches only one entity (the most similar one). If there are ties, it chooses one randomly.
 	 */
-	public static void match(String file1, int attributeNumber1, String file2, int attributeNumber2, String output, boolean oneMatch) {
+	public static void match(String file1, int attributeNumber1, String file2, int attributeNumber2, String output, boolean oneMatch, int maxMatches, double minSimilarityScore) {
 		StringMetric metric = 
 				with(new SmithWatermanGotoh())
 				.simplify(Simplifiers.removeDiacritics())
@@ -84,6 +83,7 @@ public class GeneralMatcher {
 			
 			String[] tokens = entity1.split("[\\p{Punct}\\s]+");
 			for (String token : tokens) {
+				token = token.toLowerCase();
 				if (list2Blocks.containsKey(token)) {
 					for (String entity2 : list2Blocks.get(token)) {
 						float score1 = metric.compare(entity1, entity2);
@@ -91,7 +91,7 @@ public class GeneralMatcher {
 						
 						float similarityScore = (score1 + score2) / 2; 
 						
-						if (similarityScore >= MIN_SIMILARITY_SCORE) {
+						if (similarityScore >= minSimilarityScore) {
 //							System.out.println(entity1+" - " + entity2 + " - " + similarityScore);
 							heap.add(new SimilarValue(entity2, (int)(similarityScore*100)));
 						}
@@ -116,7 +116,7 @@ public class GeneralMatcher {
 			} else {
 				Set<String> matches = new LinkedHashSet<String>();
 				int counter = 0;
-				while(!heap.isEmpty() && counter < MAX_MATCHES) {
+				while(!heap.isEmpty() && counter < maxMatches) {
 					String entity2 = heap.poll().getValue();
 					matches.add(entity2);
 					counter++;
@@ -146,7 +146,7 @@ public class GeneralMatcher {
 	 * If oneMatch=true, it matches only one entity (the most similar one). If there are ties, it chooses one randomly.
 	 * Uses parallelization in Java 8.
 	 */
-	public static void matchParallel(String file1, int attributeNumber1, String file2, int attributeNumber2, String output, boolean oneMatch) {
+	public static void matchParallel(String file1, int attributeNumber1, String file2, int attributeNumber2, String output, boolean oneMatch, int maxMatches, double minSimilarityScore) {
 		StringMetric metric = 
 				with(new SmithWatermanGotoh())
 				.simplify(Simplifiers.removeDiacritics())
@@ -169,6 +169,7 @@ public class GeneralMatcher {
 				
 				String[] tokens = entity1.split("[\\p{Punct}\\s]+");
 				for (String token : tokens) {
+					token = token.toLowerCase();
 					if (list2Blocks.containsKey(token)) {
 						for (String entity2 : list2Blocks.get(token)) {
 							float score1 = metric.compare(entity1, entity2);
@@ -176,7 +177,7 @@ public class GeneralMatcher {
 							
 							float similarityScore = (score1 + score2) / 2; 
 							
-							if (similarityScore >= MIN_SIMILARITY_SCORE) {
+							if (similarityScore >= minSimilarityScore) {
 								heap.add(new SimilarValue(entity2, (int)(similarityScore*100)));
 							}
 						}
@@ -199,7 +200,7 @@ public class GeneralMatcher {
 				} else {
 					Set<String> matches = new LinkedHashSet<String>();
 					int counter = 0;
-					while(!heap.isEmpty() && counter < MAX_MATCHES) {
+					while(!heap.isEmpty() && counter < maxMatches) {
 						String entity2 = heap.poll().getValue();
 						matches.add(entity2);
 						counter++;
@@ -253,7 +254,8 @@ public class GeneralMatcher {
 		    	String value = nextLine[attributeNumber2];
 				String[] tokens = value.split("[\\p{Punct}\\s]+");
 				for (String token : tokens) {
-					if (!stopWordSet.contains(token.toLowerCase())) {
+					token = token.toLowerCase();
+					if (!stopWordSet.contains(token)) {
 						if (!list2Blocks.containsKey(token)) {
 							list2Blocks.put(token, new HashSet<String>());
 						}
